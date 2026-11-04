@@ -1,0 +1,10 @@
+{
+  "name": "cinetix-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bản mẫu tương tác đặt vé và quản trị rạp phim Cinetix",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  }
+}
