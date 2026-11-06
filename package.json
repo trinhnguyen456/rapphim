@@ -1,10 +1,19 @@
 {
-  "name": "cinetix-demo",
+  "name": "cinetix",
   "version": "1.0.0",
   "private": true,
-  "description": "Bản mẫu tương tác đặt vé và quản trị rạp phim Cinetix",
+  "description": "Cinetix demo booking website with a MySQL-backed Node API",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=22.0.0 <23.0.0"
+  },
   "scripts": {
+    "dev": "node scripts/migrate.js && node server.js",
     "start": "node server.js",
-    "dev": "node server.js"
+    "migrate": "node scripts/migrate.js",
+    "check": "node --check server.js && node --check server/api.js && node --check server/security.js && node --check db/connection.js && node --check db/seed.js && node --check scripts/migrate.js && node --check src/app.js && node --check src/api-client.js && node --check src/api-app.js"
+  },
+  "dependencies": {
+    "mysql2": "3.24.6"
   }
 }

@@ -47,10 +47,14 @@
                 <span id="navUserName">Tài khoản</span>
             </div>
 
-            <button class="btn-pink" style="padding: 6px 12px; font-size: 0.78rem;" onclick="goScreen('admin-overview')">Quản trị ↗</button>
+            <button id="adminNavEntry" class="btn-pink hidden" style="padding: 6px 12px; font-size: 0.78rem;" onclick="goScreen('admin-overview')">Quản trị ↗</button>
         </div>
     </div>
 </header>
+
+<aside id="demoPrivacyNotice" class="demo-privacy-notice" aria-label="Thông báo dữ liệu demo">
+    <div class="container"><strong>Bản demo Cinetix.</strong> Phim, giá và suất chiếu là dữ liệu minh họa; tài khoản, thông tin liên hệ và đơn vé được lưu trong cơ sở dữ liệu dùng chung. Không nhập thông tin thanh toán thật; các phương thức thanh toán và QR chỉ mô phỏng.</div>
+</aside>
 
 <!-- THANH STEPPER (HIỂN THỊ KHI ĐẶT VÉ BƯỚC 2 -> 5) -->
 <div id="stepperBar" class="stepper-bar hidden">
@@ -95,7 +99,7 @@
                 <strong style="display:block; font-size:0.92rem;">Đặt vé nhanh</strong>
                 <span style="font-size:0.76rem; color:var(--text-muted);">Chọn phim. Chọn cảm xúc.</span>
             </div>
-            <select id="quickMovieSelect" class="input-dark" onchange="changeMovieSelection(this.value)">
+            <select id="quickMovieSelect" class="input-dark">
                 <option value="Dưới bầu trời sao">Dưới bầu trời sao</option>
                 <option value="Thành phố không ngủ">Thành phố không ngủ</option>
                 <option value="Sau cánh rừng">Sau cánh rừng</option>
@@ -105,20 +109,10 @@
                 <option value="BỘ 5 SIÊU ĐẲNG CẤP">BỘ 5 SIÊU ĐẲNG CẤP</option>
                 <option value="DƯỚI ĐÁY HỒ">DƯỚI ĐÁY HỒ</option>
             </select>
-            <select class="input-dark" onchange="state.cinema = this.value; syncSummaryUI();">
-                <option value="Cinetix Landmark 81">Cinetix Landmark 81</option>
-                <option value="Cinetix Crescent Mall">Cinetix Crescent Mall</option>
-                <option value="Cinetix Bến Tre 1">Cinetix Bến Tre 1</option>
-                <option value="Cinetix Hà Nội 1">Cinetix Hà Nội 1</option>
-            </select>
-            <select class="input-dark"><option>31/10/2026</option><option>01/11/2026</option></select>
-            <select class="input-dark" onchange="state.time = this.value; syncSummaryUI();">
-                <option value="19:30">19:30</option>
-                <option value="14:00">14:00</option>
-                <option value="16:45">16:45</option>
-                <option value="21:00">21:00</option>
-            </select>
-            <button class="btn-pink" onclick="goScreen('showtimes')">Đặt vé</button>
+            <select id="quickCinemaSelect" class="input-dark" aria-label="Chọn rạp"><option>Đang tải rạp...</option></select>
+            <select id="quickDateSelect" class="input-dark" aria-label="Chọn ngày"><option>Đang tải ngày...</option></select>
+            <select id="quickTimeSelect" class="input-dark" aria-label="Chọn giờ"><option>Chọn phim và ngày</option></select>
+            <button class="btn-pink" onclick="quickBook()">Đặt vé</button>
         </div>
     </div>
 
@@ -265,13 +259,13 @@
     <!-- Khung Trailer (Hình 5.2) -->
     <div id="trailerBox" class="trailer-collapse-box hidden">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-            <h3 style="font-size:1.1rem;">🎬 Trailer chính thức • <span class="sumMovieTitle">Dưới bầu trời sao</span></h3>
+            <h3 style="font-size:1.1rem;">🎬 Giới thiệu phim • <span class="sumMovieTitle">Dưới bầu trời sao</span></h3>
             <button class="btn-dark btn-sm" onclick="toggleTrailerBox()">Đóng ✕</button>
         </div>
         <div style="position:relative; height:340px; border-radius:12px; overflow:hidden; background:#000; border:1px solid var(--border); display:flex; align-items:center; justify-content:center;">
             <img class="sumMoviePoster" src="https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=1000&q=80" alt="" style="width:100%; height:100%; object-fit:cover; opacity:0.45;">
             <div style="position:absolute; text-align:center;">
-                <div style="width:68px; height:48px; background:#ff0000; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; font-size:1.5rem; margin-bottom:10px; cursor:pointer;" onclick="alert('Đang phát video Trailer chính thức!')">▶</div>
+                <div style="width:68px; height:48px; background:#ff0000; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; font-size:1.5rem; margin-bottom:10px; cursor:pointer;" onclick="alert('Trailer minh họa — chưa tích hợp video chính thức.')">▶</div>
                 <p style="font-size:0.9rem; font-weight:600;">Official Trailer | Đang khởi chiếu tại hệ thống rạp Cinetix</p>
             </div>
         </div>
@@ -282,60 +276,8 @@
         <span class="badge-outline">01 / CHỌN SUẤT CHIẾU</span>
     </div>
 
-    <div class="date-strip" id="dateStrip">
-        <div class="date-box" onclick="selectDate(this, 'Hôm nay, 30/10/2026')"><span>Hôm nay</span><strong>30/10</strong></div>
-        <div class="date-box active" onclick="selectDate(this, 'Thứ Bảy, 31/10/2026')"><span>Thứ Bảy</span><strong>31/10</strong></div>
-        <div class="date-box" onclick="selectDate(this, 'Chủ Nhật, 01/11/2026')"><span>Chủ Nhật</span><strong>01/11</strong></div>
-        <div class="date-box" onclick="selectDate(this, 'Thứ Hai, 02/11/2026')"><span>Thứ Hai</span><strong>02/11</strong></div>
-        <div class="date-box" onclick="selectDate(this, 'Thứ Ba, 03/11/2026')"><span>Thứ Ba</span><strong>03/11</strong></div>
-        <div class="date-box" onclick="selectDate(this, 'Thứ Tư, 04/11/2026')"><span>Thứ Tư</span><strong>04/11</strong></div>
-        <div class="date-box" onclick="selectDate(this, 'Thứ Năm, 05/11/2026')"><span>Thứ Năm</span><strong>05/11</strong></div>
-    </div>
-
-    <div class="cinema-showtime-card" style="border-color:var(--border-pink);">
-        <div>
-            <h3 style="font-size:1.1rem; margin-bottom:4px;">Cinetix Landmark 81</h3>
-            <p style="font-size:0.78rem; color:var(--text-muted);">720A Điện Biên Phủ, Bình Thạnh, TP. HCM</p>
-        </div>
-        <div>
-            <div style="font-size:0.76rem; color:var(--text-muted);">2D • Phụ đề tiếng Việt</div>
-            <div class="time-slots">
-                <button class="slot-btn" onclick="pickShowtime(this, 'Cinetix Landmark 81', '14:00', 'Phòng 01')"><strong>14:00</strong><small>Phòng 01</small></button>
-                <button class="slot-btn" onclick="pickShowtime(this, 'Cinetix Landmark 81', '16:45', 'Phòng 02')"><strong>16:45</strong><small>Phòng 02</small></button>
-                <button class="slot-btn active" onclick="pickShowtime(this, 'Cinetix Landmark 81', '19:30', 'Phòng 03')"><strong>19:30</strong><small>Phòng 03</small></button>
-                <button class="slot-btn" onclick="pickShowtime(this, 'Cinetix Landmark 81', '22:00', 'Phòng 03')"><strong>22:00</strong><small>Phòng 03</small></button>
-            </div>
-        </div>
-    </div>
-
-    <div class="cinema-showtime-card">
-        <div>
-            <h3 style="font-size:1.1rem; margin-bottom:4px;">Cinetix Crescent Mall</h3>
-            <p style="font-size:0.78rem; color:var(--text-muted);">101 Tôn Dật Tiên, Quận 7, TP. HCM</p>
-        </div>
-        <div>
-            <div style="font-size:0.76rem; color:var(--text-muted);">2D • Phụ đề tiếng Việt</div>
-            <div class="time-slots">
-                <button class="slot-btn" onclick="pickShowtime(this, 'Cinetix Crescent Mall', '15:15', 'Phòng 02')"><strong>15:15</strong><small>Phòng 02</small></button>
-                <button class="slot-btn" onclick="pickShowtime(this, 'Cinetix Crescent Mall', '18:00', 'Phòng 04')"><strong>18:00</strong><small>Phòng 04</small></button>
-                <button class="slot-btn" onclick="pickShowtime(this, 'Cinetix Crescent Mall', '20:45', 'Phòng 01')"><strong>20:45</strong><small>Phòng 01</small></button>
-            </div>
-        </div>
-    </div>
-
-    <div class="cinema-showtime-card">
-        <div>
-            <h3 style="font-size:1.1rem; margin-bottom:4px;">Cinetix Bến Tre 1 & Hà Nội 1</h3>
-            <p style="font-size:0.78rem; color:var(--text-muted);">109 Hùng Vương (Bến Tre) • 100 Hồ Con Rùa (Hà Nội)</p>
-        </div>
-        <div>
-            <div style="font-size:0.76rem; color:var(--text-muted);">2D • Phụ đề / Thuyết minh</div>
-            <div class="time-slots">
-                <button class="slot-btn" onclick="pickShowtime(this, 'Cinetix Bến Tre 1', '21:00', 'Room 4')"><strong>21:00</strong><small>Bến Tre (Room 4)</small></button>
-                <button class="slot-btn" onclick="pickShowtime(this, 'Cinetix Hà Nội 1', '10:30', 'Room 1')"><strong>10:30</strong><small>Hà Nội (Room 1)</small></button>
-            </div>
-        </div>
-    </div>
+    <div class="date-strip" id="dateStrip" aria-label="Chọn ngày chiếu"><div class="empty-state-box">Đang tải lịch chiếu demo...</div></div>
+    <div id="showtimeGroups" aria-live="polite"><div class="empty-state-box">Đang tải suất chiếu từ máy chủ...</div></div>
 
     <div class="sticky-bottom-bar">
         <div>
@@ -550,10 +492,10 @@
                     <h1 style="font-size:1.95rem; font-weight:800;">Chỉ còn một bước đến màn ảnh.</h1>
                     <p style="color:var(--text-gray); font-size:0.88rem;">Kiểm tra thông tin trước khi xác nhận đơn đặt vé.</p>
                 </div>
-                <div class="timer-badge">Giữ ghế <span class="sumSeatShort">-</span> • 08:30</div>
+                <div class="timer-badge">Đơn demo • chốt ghế khi xác nhận</div>
             </div>
             <div class="panel-card" style="background:rgba(236,72,153,0.1); border-color:var(--border-pink); padding:16px 20px;">
-                <strong style="color:var(--pink-light); font-size:0.88rem;">🛡️ Lưu ý thanh toán</strong>
+                <strong style="color:var(--pink-light); font-size:0.88rem;">🛡️ Lưu ý dữ liệu demo</strong>
                 <p style="font-size:0.8rem; color:var(--text-gray);">Vé đã mua không thể hoàn, hủy, đổi vé. Khi xác nhận, hệ thống hiển thị QR demo và cập nhật doanh thu quản trị; QR/ATM/thẻ chỉ mô phỏng, không phát sinh giao dịch thật.</p>
             </div>
             <div class="panel-card">
@@ -587,14 +529,14 @@
                     </div>
                     <span class="badge-outline">KHUYÊN DÙNG</span>
                 </div>
-                <div class="pay-method-item" onclick="selectPayMethod(this, 'Thẻ ATM nội địa')">
+                <div class="pay-method-item" onclick="selectPayMethod(this, 'ATM nội địa')">
                     <div>
                         <strong style="font-size:0.88rem; display:block;">💳 Thẻ ATM (Thẻ ngân hàng nội địa)</strong>
                         <span style="font-size:0.76rem; color:var(--text-muted);">Thanh toán mô phỏng nhanh</span>
                     </div>
                     <span class="badge-gray">ATM</span>
                 </div>
-                <div class="pay-method-item" onclick="selectPayMethod(this, 'Thẻ quốc tế Visa/Master')">
+                <div class="pay-method-item" onclick="selectPayMethod(this, 'Thẻ quốc tế')">
                     <div>
                         <strong style="font-size:0.88rem; display:block;">🌐 Thẻ quốc tế (Visa, Master, Amex, JCB)</strong>
                         <span style="font-size:0.76rem; color:var(--text-muted);">Thanh toán mô phỏng quốc tế</span>
@@ -602,7 +544,7 @@
                     <span class="badge-gray">VISA</span>
                 </div>
                 <label style="font-size:0.8rem; color:var(--text-gray); display:flex; align-items:center; gap:8px; margin-top:14px; cursor:pointer;">
-                    <input id="checkoutTerms" type="checkbox" checked style="accent-color:var(--pink);">
+                    <input id="checkoutTerms" type="checkbox" style="accent-color:var(--pink);">
                     Tôi đồng ý với điều khoản sử dụng và xác nhận mua vé đúng độ tuổi quy định.
                 </label>
             </div>
@@ -636,7 +578,7 @@
         </p>
         <p style="font-size:0.78rem; color:var(--amber); margin:-8px 0 14px;">Mã minh họa — không quét để chuyển tiền.</p>
         <div style="background:white; padding:16px; border-radius:12px; display:inline-block; margin-bottom:18px;">
-            <img id="checkoutQrImg" src="https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=CINETIX-PAYMENT" alt="QR Thanh Toán" width="190" height="190">
+            <img id="checkoutQrImg" src="/public/cinetix-logo.svg" alt="QR thanh toán minh họa" width="190" height="190">
         </div>
         <div style="display:grid; grid-template-columns:1fr 1.4fr; gap:10px;">
             <button class="btn-dark" onclick="closeQrPaymentModal()">Quay lại</button>
@@ -653,7 +595,7 @@
         <div class="check-circle">✓</div>
         <h1 style="font-size:2.2rem; font-weight:800; margin-bottom:6px;">ĐẶT VÉ DEMO HOÀN TẤT!</h1>
         <p style="color:var(--text-gray); font-size:0.92rem; margin-bottom:12px;">Cảm ơn <span id="ticketHolderShort">bạn</span>! Vé điện tử Cinetix của bạn đã sẵn sàng.</p>
-        <span class="badge-outline">BẢN DEMO • ĐÃ CẬP NHẬT SỐ LIỆU CỤC BỘ</span>
+        <span class="badge-outline">BẢN DEMO • ĐƠN VÉ ĐƯỢC LƯU TRÊN MÁY CHỦ</span>
 
         <div class="eticket-card">
             <div class="eticket-top">
@@ -664,7 +606,7 @@
                         <span id="finalTicketCode" style="font-size:0.75rem; color:#64748b; font-weight:700;">VÉ ĐIỆN TỬ / CTX-261031-0001</span>
                     </div>
                     <h2 id="finalMovieTitle" style="font-size:1.8rem; font-weight:800;">Dưới bầu trời sao</h2>
-                    <p style="font-size:0.8rem; color:#64748b; margin-bottom:14px;">T13 • 2D phụ đề • Đưa mã này cho nhân viên soát vé để vào rạp</p>
+                    <p style="font-size:0.8rem; color:#64748b; margin-bottom:14px;">T13 • 2D phụ đề • Mã demo trình diễn, không dùng để vào rạp</p>
                     <strong id="finalCinema" style="font-size:0.95rem; display:block;">Cinetix Landmark 81</strong>
                     <span style="font-size:0.78rem; color:#64748b;">Hệ thống rạp chiếu phim Cinetix Việt Nam</span>
                     <div class="eticket-meta-grid">
@@ -677,7 +619,7 @@
             </div>
             <div class="eticket-bottom">
                 <div style="text-align:center;">
-                    <img id="finalTicketQrImg" src="https://api.qrserver.com/v1/create-qr-code/?size=95x95&data=CTX-261031-0001" alt="QR Ticket" width="90" height="90" style="border-radius:6px; border:2px solid #1e293b; padding:3px; background:white;">
+                    <img id="finalTicketQrImg" src="/public/cinetix-logo.svg" alt="QR vé demo" width="90" height="90" style="border-radius:6px; border:2px solid #1e293b; padding:3px; background:white;">
                 </div>
                 <div>
                     <strong style="font-size:0.95rem; display:block;"><span id="finalCustName">Khách hàng</span> • <span id="finalTicketCount">1 vé</span></strong>
@@ -685,7 +627,7 @@
                     <small id="finalPayMethodText" style="font-size:0.74rem; color:#64748b;">Phương thức: Ví MoMo / QR Cinetix</small>
                 </div>
                 <div style="text-align:right;">
-                    <small style="font-size:0.68rem; color:#64748b; display:block;">TỔNG TIỀN THANH TOÁN</small>
+                    <small style="font-size:0.68rem; color:#64748b; display:block;">TỔNG GIÁ TRỊ ĐƠN DEMO</small>
                     <strong id="finalTotalMoney" style="font-size:1.5rem; font-weight:800; color:#be185d;">0đ</strong>
                 </div>
             </div>
@@ -694,7 +636,7 @@
         <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
             <button class="btn-pink" onclick="window.print()">Tải / In vé điện tử ↓</button>
             <button class="btn-dark" onclick="goScreen('profile')">Xem lịch sử đặt vé</button>
-            <button class="btn-dark" onclick="goScreen('admin-overview')">Xem doanh số Admin ↗</button>
+            <button id="finalAdminButton" class="btn-dark hidden" onclick="goScreen('admin-overview')">Xem doanh số Admin ↗</button>
             <button class="btn-dark" onclick="goScreen('home')">Về trang chủ</button>
         </div>
     </div>
@@ -737,7 +679,7 @@
             </div>
             <div class="input-group" style="margin-bottom: 20px;">
                 <label>Ngày sinh</label>
-                <input type="text" id="profDobInput" class="input-dark" value="" placeholder="DD/MM/YYYY">
+                <input type="date" id="profDobInput" class="input-dark" value="">
             </div>
 
             <button class="btn-pink" style="width: 100%; margin-bottom: 14px;" onclick="saveUserProfile()">Lưu thay đổi</button>
@@ -809,9 +751,9 @@
                 <label>Mật khẩu</label>
                 <input type="password" id="loginPassword" class="input-dark" value="" placeholder="Nhập mật khẩu">
             </div>
-            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-gray); margin-bottom: 18px;">
-                <label><input type="checkbox" style="accent-color: var(--pink);"> Ghi nhớ đăng nhập</label>
-                <span class="link-pink" style="font-size: 0.78rem;">Quên mật khẩu?</span>
+            <div style="display:flex; justify-content:space-between; gap:12px; font-size:0.76rem; color:var(--text-gray); margin-bottom:18px;">
+                <span>Phiên đăng nhập được bảo vệ và tự hết hạn.</span>
+                <span>Khôi phục mật khẩu chưa hỗ trợ trong bản demo.</span>
             </div>
             <button class="btn-pink" style="width:100%;" onclick="handleLogin()">Đăng nhập →</button>
             <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 14px;">
@@ -843,7 +785,7 @@
                 <input type="password" id="regPasswordConfirm" class="input-dark" value="" placeholder="Nhập lại mật khẩu">
             </div>
             <button class="btn-pink" style="width:100%;" onclick="handleRegister()">Tạo tài khoản</button>
-            <p style="font-size:0.72rem; color:var(--text-muted); margin-top:12px;">Bản demo lưu dữ liệu trên trình duyệt này. Không dùng mật khẩu thật hoặc thông tin thanh toán cá nhân.</p>
+            <p style="font-size:0.72rem; color:var(--text-muted); margin-top:12px;">Tài khoản lưu trong cơ sở dữ liệu dùng chung. Hãy dùng mật khẩu riêng cho bản demo; không nhập thông tin thanh toán cá nhân.</p>
         </div>
     </div>
 </main>
@@ -880,13 +822,12 @@
         </nav>
 
         <div class="admin-sample-box">
-            <strong>● DỮ LIỆU DEMO CỤC BỘ</strong>
-            <p>Khởi tạo từ 0, cập nhật khi đăng ký / đặt vé và chỉ lưu trên trình duyệt này.</p>
+            <strong>● DỮ LIỆU DEMO • MYSQL</strong>
+            <p>Đơn và hồ sơ lưu trên máy chủ; không có thao tác xóa/reset toàn bộ cơ sở dữ liệu live.</p>
         </div>
 
         <div style="padding-left: 10px; display: flex; flex-direction: column; gap: 10px;">
             <span style="font-size: 0.82rem; color: var(--text-gray); cursor: pointer;" onclick="goScreen('home')">← Về website Cinetix</span>
-            <span style="font-size: 0.76rem; color: var(--pink-light); cursor: pointer;" onclick="resetAllSystemData()">↺ Đặt lại toàn bộ về 0</span>
         </div>
     </aside>
 
@@ -896,7 +837,7 @@
             <div style="display: flex; align-items: center; gap: 16px;">
                 <span>🔔</span>
                 <span class="badge-outline">Quản trị viên</span>
-                <strong style="color: var(--text-white);">Nguyễn Hoàng (Alice)</strong>
+                <strong id="adminAccountName" style="color: var(--text-white);">Tài khoản quản trị</strong>
             </div>
         </div>
 
@@ -905,9 +846,9 @@
             <div class="page-top-row">
                 <div>
                     <h1 style="font-size: 2.1rem; font-weight: 800;">Nhịp đập phòng vé</h1>
-                    <p style="color: var(--text-gray); font-size: 0.9rem;">Tổng quan hoạt động và thống kê từ dữ liệu demo trên trình duyệt này.</p>
+                    <p style="color: var(--text-gray); font-size: 0.9rem;">Thống kê từ đơn demo được lưu trong cơ sở dữ liệu Cinetix.</p>
                 </div>
-                <div class="btn-dark" style="cursor: default;">25 – 31/10/2026 📅</div>
+                <div id="adminDateRange" class="btn-dark" style="cursor: default;">7 ngày gần nhất 📅</div>
             </div>
 
             <div class="kpi-grid-4">
@@ -955,7 +896,7 @@
                         <div class="bar-col"><div class="bar-fill" style="height: 2%;"></div><span class="bar-label">30/10</span></div>
                         <div class="bar-col"><div id="todayRevenueBar" class="bar-fill highlight" style="height: 2%;"></div><span class="bar-label">31/10</span></div>
                     </div>
-                    <p style="font-size: 0.74rem; color: var(--text-muted);">Đơn vị: VNĐ • Cột 31/10 tự động tăng khi có đơn đặt vé mới</p>
+                    <p style="font-size: 0.74rem; color: var(--text-muted);">Đơn vị: VNĐ • Tổng hợp từ đơn demo lưu trên máy chủ</p>
                 </div>
 
                 <div class="panel-card" style="margin-bottom: 0;">
@@ -1020,7 +961,7 @@
                     <div class="input-group" style="margin-bottom: 12px;"><label>Thể loại</label><input type="text" id="editMovieGenre" class="input-dark" value="Khoa học viễn tưởng, Phiêu lưu"></div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                         <div class="input-group"><label>Ngày phát hành</label><input type="text" id="editMovieRelease" class="input-dark" value="23/10/2026"></div>
-                        <div class="input-group"><label>Trạng thái</label><select class="input-dark"><option>Đang chiếu</option><option>Sắp chiếu</option></select></div>
+                        <div class="input-group"><label>Trạng thái</label><select id="editMovieStatus" class="input-dark"><option value="now_showing">Đang chiếu</option><option value="coming_soon">Sắp chiếu</option></select></div>
                     </div>
                     <div class="input-group" style="margin-bottom: 14px;"><label>Nội dung mô tả</label><textarea id="editMovieDesc" class="input-dark" rows="3">Năm 2086, phi hành gia An đi theo tín hiệu bí ẩn từ thiên hà xa xôi để tìm lại hy vọng cho Trái Đất.</textarea></div>
                     <div style="display: grid; grid-template-columns: 90px 1fr; gap: 12px;">
@@ -1051,59 +992,22 @@
                             <th>Trạng thái</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr onclick="selectAdminShowtimeRow(this, '14:00', '95.000đ')" style="cursor:pointer;">
-                            <td style="color:white; font-weight:700;">14:00</td>
-                            <td>31/10/2026</td>
-                            <td>Phòng 01</td>
-                            <td>2D phụ đề</td>
-                            <td>95.000đ</td>
-                            <td id="slotCap_14:00">0 / 78 ghế</td>
-                            <td style="color: var(--green);">● Đang mở bán</td>
-                        </tr>
-                        <tr onclick="selectAdminShowtimeRow(this, '16:45', '95.000đ')" style="cursor:pointer;">
-                            <td style="color:white; font-weight:700;">16:45</td>
-                            <td>31/10/2026</td>
-                            <td>Phòng 02</td>
-                            <td>2D phụ đề</td>
-                            <td>95.000đ</td>
-                            <td id="slotCap_16:45">0 / 78 ghế</td>
-                            <td style="color: var(--green);">● Đang mở bán</td>
-                        </tr>
-                        <tr class="active-row" onclick="selectAdminShowtimeRow(this, '19:30', '95.000đ')" style="cursor:pointer;">
-                            <td>19:30</td>
-                            <td>31/10/2026</td>
-                            <td>Phòng 03</td>
-                            <td>2D phụ đề</td>
-                            <td>95.000đ</td>
-                            <td id="slotCap_19:30">0 / 78 ghế</td>
-                            <td style="color: var(--green);">● Đang mở bán</td>
-                        </tr>
-                        <tr onclick="selectAdminShowtimeRow(this, '21:00', '95.000đ')" style="cursor:pointer;">
-                            <td style="color:white; font-weight:700;">21:00</td>
-                            <td>31/10/2026</td>
-                            <td>Room 4</td>
-                            <td>2D phụ đề</td>
-                            <td>95.000đ</td>
-                            <td id="slotCap_21:00">0 / 78 ghế</td>
-                            <td style="color: var(--green);">● Đang mở bán</td>
-                        </tr>
-                    </tbody>
+                    <tbody id="adminShowtimesBody"><tr><td colspan="7">Đang tải dữ liệu suất chiếu...</td></tr></tbody>
                 </table>
             </div>
 
             <div class="showtime-edit-bar">
                 <h3 style="font-size: 1.05rem;">Chỉnh sửa suất chiếu <span id="editSlotHeading">19:30</span></h3>
                 <div class="showtime-inputs-5">
-                    <div class="input-group"><label>Rạp chiếu</label><select class="input-dark"><option>Cinetix Landmark 81</option><option>Cinetix Crescent Mall</option><option>Cinetix Bến Tre 1</option></select></div>
-                    <div class="input-group"><label>Phòng</label><select class="input-dark"><option>Phòng 03</option><option>Phòng 01</option><option>Room 4</option></select></div>
-                    <div class="input-group"><label>Ngày chiếu</label><input type="text" class="input-dark" value="31/10/2026"></div>
-                    <div class="input-group"><label>Giờ bắt đầu</label><input type="text" id="editSlotTimeInput" class="input-dark" value="19:30"></div>
-                    <div class="input-group"><label>Giá vé</label><input type="text" id="editSlotPriceInput" class="input-dark" value="95.000đ"></div>
+                    <div class="input-group"><label>Rạp chiếu</label><input id="editSlotCinemaName" class="input-dark" readonly></div>
+                    <div class="input-group"><label>Phòng</label><input id="editSlotRoomName" class="input-dark" readonly></div>
+                    <div class="input-group"><label>Ngày chiếu</label><input type="date" id="editSlotDateInput" class="input-dark"></div>
+                    <div class="input-group"><label>Giờ bắt đầu</label><input type="time" id="editSlotTimeInput" class="input-dark"></div>
+                    <div class="input-group"><label>Giá vé cơ bản</label><input type="number" id="editSlotPriceInput" class="input-dark" min="1000" step="1000" value="95000"></div>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 0.78rem; color: var(--text-muted);">✓ Không trùng lịch phòng • Nghỉ giữa suất 20 phút</span>
-                    <button class="btn-pink" onclick="alert('Đã lưu cập nhật suất chiếu!')">Lưu suất chiếu</button>
+                    <button class="btn-pink" onclick="saveShowtimeFromAdmin()">Lưu suất chiếu demo</button>
                 </div>
             </div>
         </div>
@@ -1278,7 +1182,7 @@
                     <li onclick="goScreen('profile')" style="cursor:pointer;">Hồ sơ & Lịch sử vé</li>
                 </ul>
             </div>
-            <div class="footer-col">
+            <div id="adminFooterSection" class="footer-col hidden">
                 <h4>Quản trị hệ thống (6 Tab)</h4>
                 <ul>
                     <li onclick="goScreen('admin-overview')" style="cursor:pointer; color:var(--pink-light);">1. Tổng quan phòng vé</li>
@@ -1305,6 +1209,8 @@
     </div>
 </footer>
 
+<script src="/src/api-client.js" defer></script>
 <script src="/src/app.js" defer></script>
+<script src="/src/api-app.js" defer></script>
 </body>
 </html>

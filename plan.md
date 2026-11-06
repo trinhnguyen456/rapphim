@@ -6,9 +6,9 @@ Dựng website tiếng Việt dựa trên tệp `!DOCTYPE1.html` do người dù
 
 - **Khách hàng:** trang phim đang chiếu/sắp chiếu, thông tin phim và trailer, lịch chiếu theo ngày/rạp, chọn ghế thường/VIP/ghế đôi, chọn bắp nước, thông tin người mua, chọn cách thanh toán mô phỏng, mã QR/vé điện tử, đăng ký/đăng nhập, hồ sơ và lịch sử vé.
 - **Quản trị:** sáu mục tổng quan doanh thu/KPI/biểu đồ/đơn mới; quản lý phim và suất chiếu; rạp và phòng chiếu; tài khoản khách hàng; tài khoản nhân sự; doanh thu theo phim và danh sách vé. Các hành động quản trị trong bản mẫu gồm thêm/sửa/xóa dữ liệu mẫu và làm mới dữ liệu demo.
-- **Tương tác và trạng thái:** lựa chọn phim/ngày/suất chiếu/ghế, tổng tiền, đồ ăn, thông tin tài khoản và vé đặt cần đồng bộ giữa các màn hình. Lưu trạng thái demo ở trình duyệt để không mất sau khi tải lại.
+- **Tương tác và trạng thái:** lựa chọn phim/ngày/suất chiếu/ghế, tổng tiền, đồ ăn, thông tin tài khoản và vé đặt cần đồng bộ giữa các màn hình. Dữ liệu nghiệp vụ được lưu qua API trong MySQL Managed, không dùng localStorage làm nguồn dữ liệu.
 
-Đây là bản mẫu phía trình duyệt. Tài khoản, vé và số liệu là dữ liệu demo trên thiết bị/trình duyệt hiện tại; đăng nhập không thay thế xác thực máy chủ. Các phương thức QR/MoMo, ATM và thẻ chỉ mô phỏng giao diện, không thu tiền hoặc gửi vé thật. Không cấu hình máy chủ nghiệp vụ, cơ sở dữ liệu hay thông tin bí mật khi yêu cầu hiện tại chưa nêu tích hợp đó.
+Đây là website demo có dữ liệu nghiệp vụ dùng chung trong DB Managed; phiên đăng nhập và quyền admin được xác minh ở máy chủ. Các phương thức QR/MoMo, ATM và thẻ chỉ mô phỏng, không thu tiền hoặc phát hành vé đã thanh toán. Preview và website live chia sẻ DB; dữ liệu localStorage cũ trên thiết bị không tự được nhập vào DB.
 
 ## Thiết kế
 
@@ -22,27 +22,38 @@ Dựng website tiếng Việt dựa trên tệp `!DOCTYPE1.html` do người dù
 - **Định vị/giọng nói:** rạp phim gần gũi, giàu cảm xúc và tiện lợi; cá tính điện ảnh, rõ ràng, thân thiện. Ví dụ: “Một chiếc vé, ngàn câu chuyện.” và “Chọn ghế đẹp, bắt đầu buổi tối của bạn.”
 - **Wordmark/logo:** chữ `cinetix` chữ thường bên cạnh biểu tượng vé chữ nhật bo góc; màu nhận diện hồng Cinetix.
 
-## Kỹ thuật và cấu trúc
+## Kỹ thuật, dữ liệu và cấu trúc
 
-Dùng HTML, CSS và JavaScript thuần để chuyển trực tiếp bản tham chiếu, không thêm thư viện ứng dụng hoặc dịch vụ backend. Một HTTP server Node.js dùng module có sẵn phục vụ tệp và Preview trên cổng runtime 3000. Các màn hình bên trong là trạng thái của cùng tuyến `/`; khai báo tuyến đó trong `public/manus-routes.json`.
+Giữ HTML, CSS và JavaScript hiện tại ở giao diện người dùng, nhưng chuyển dữ liệu nghiệp vụ sang API Node.js và MySQL Managed. Máy chủ Node phục vụ cả HTML/CSS/JS lẫn `/api/*`; `mysql2/promise` là thư viện runtime được ghim phiên bản và có lockfile. Mật khẩu tài khoản băm/xác minh bằng `crypto.scrypt` bất đồng bộ; ba bộ đếm login/register/booking dùng chung trong MySQL giới hạn lần lượt 300/100/100 yêu cầu mỗi cửa sổ 15 phút trên toàn bộ instance. API chỉ chấp nhận ba scope cố định; primary key cho phép tối đa một counter cho mỗi scope, không lưu IP. Session opaque ngẫu nhiên lưu dạng hash trong DB và cookie `HttpOnly`, `Secure`, `SameSite=None` tương thích HTTPS/Preview. Không dùng localStorage làm nguồn xác thực hay sổ ghế bán.
 
-Cấu trúc dự kiến:
+Migration SQL đánh số, lặp lại an toàn và chỉ tạo/cập nhật cấu trúc theo hướng additive; bảng migration ghi nhận bước đã chạy. Tạo catalog mẫu chỉ khi bảng tương ứng rỗng, tuyệt đối không seed đè dữ liệu đã chỉnh. Tạo lịch mẫu cho bảy ngày kế tiếp theo `Asia/Ho_Chi_Minh` để tránh hiển thị suất đã qua; các suất/phim/giá/booking đều ghi rõ là dữ liệu demo. Các thực thể gồm khách hàng/nhân viên và vai trò, session, ba bộ đếm request giới hạn cố định, phim, rạp, phòng, suất chiếu, đơn vé, ghế trong đơn và món bắp nước. DB Managed được chia sẻ giữa Preview và production; kiểm thử chỉ đọc hoặc dùng thao tác tạo bản ghi thử có dọn cụ thể, không chạy migration phá hủy hay reset dữ liệu live.
+
+Server tự xác minh quyền ở mọi API quản trị; ẩn giao diện admin ở client không được coi là ranh giới bảo mật. Tài khoản admin đầu tiên được seed theo biến bảo mật nhập qua thẻ bí mật, không lưu trong Git, không in ra log. Quy trình đặt vé kiểm tra giá và ghế trên server rồi tạo booking/ghế bằng transaction, ràng buộc duy nhất theo suất + ghế để tránh bán trùng. Phương thức QR/MoMo/ATM/thẻ vẫn là mô phỏng; đơn được ghi nhãn xác nhận demo, không nhận số thẻ, không thu tiền và không khẳng định đã thanh toán thật.
+
+Phát hành bằng Docker container: Dockerfile cài dependency từ lockfile, phục vụ tệp giao diện và API trên `PORT` (mặc định 3000), đồng thời cung cấp `/_app/health` không cần đăng nhập. Migration có phiên bản được chạy rõ ràng trước khi khởi động/công bố; container chỉ bind listener nhanh để healthcheck không chờ seed. Khai báo `features.server=true`, `features.database=true` và `deploy.healthPath="/_app/health"`. Không cần static `build` riêng vì container phục vụ cả website và API. `public/manus-routes.json` tiếp tục khai báo trang `/`. Sau khi push checkpoint lên GitHub canonical, dùng Publish đã được người dùng yêu cầu để phát hành công khai; không bật auto-publish.
+
+**Phạm vi dữ liệu cũ:** dữ liệu localStorage ở từng trình duyệt không phải bản ghi tập trung và không thể tự hợp nhất an toàn; không tự nhập nó vào DB. Lần khởi tạo chỉ đưa bộ phim/rạp/phòng/nhân sự/suất chiếu/món mẫu vào các bảng trống. Khu admin không có thao tác xóa/reset toàn bộ DB live. Trước khi vận hành với khách thật, người quản trị cần kiểm tra dữ liệu mẫu và nội dung thông báo quyền riêng tư. Không có môi trường staging riêng; Preview và website live dùng chung DB, nên migrations và writes phải được coi là tác động tới dữ liệu live.
 
 ```text
 cinetix/
-├── index.html                 # Khung HTML và các màn hình khách/admin
-├── src/
-│   ├── styles.css             # Kiểu dáng, breakpoint và thành phần giao diện
-│   └── app.js                 # Dữ liệu demo, luồng đặt vé và quản trị
+├── index.html                 # Khung giao diện khách hàng và admin
+├── src/styles.css             # Nhận diện, responsive và print styles
+├── src/app.js                 # Khung giao diện/state tương thích
+│   ├── api-client.js          # HTTP cùng origin, credentials và CSRF
+│   └── api-app.js             # Gắn giao diện với API, booking và admin
 ├── public/
-│   ├── manus-routes.json      # Khai báo tuyến trang gốc
-│   └── cinetix-logo.svg       # Biểu tượng vé Cinetix và favicon
-├── server.js                  # HTTP server Node.js không phụ thuộc thư viện ngoài
-├── package.json               # Lệnh chạy dự án
-├── app.config.ts              # URL HTTPS của logo dự án WebDev
-├── README.md                  # Cách chạy và giới hạn bản demo
-├── plan.md                    # Kế hoạch đã duyệt
-└── TODO.md                    # Kết quả và tiêu chí phạm vi đã duyệt
+│   ├── manus-routes.json      # Tuyến trang gốc
+│   └── cinetix-logo.svg       # Logo/favicon
+├── server.js                  # HTTP server, route dispatch và health
+├── server/
+│   ├── api.js                 # REST routes, validation, booking transaction, admin queries
+│   └── security.js            # Password scrypt, sessions, CSRF và role checks
+├── db/                        # Kết nối MySQL, seed và schema migrations tăng phiên bản
+├── scripts/migrate.js         # Migration additive, seed không ghi đè và admin bootstrap
+├── Dockerfile                 # Build và khởi chạy container production
+├── package.json + lockfile    # Dependency/pin toolchain
+├── app.config.ts              # URL HTTPS logo WebDev
+├── README.md                  # Chạy, secrets, migration và giới hạn thanh toán
+├── plan.md                    # Kế hoạch
+└── TODO.md                    # Tiêu chí đã duyệt
 ```
-
-Không tạo cơ sở dữ liệu/backend vì bản nguồn là giao diện HTML/JS tự chạy và người dùng không yêu cầu tích hợp thật. Preview được phục vụ tại runtime hiện có; kiểm tra phản hồi HTTP và các tệp tuyến. Không tự động xuất bản công khai; xuất bản (nếu muốn) là bước riêng sau.

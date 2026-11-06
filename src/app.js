@@ -158,48 +158,9 @@
         stats.movieRevenue[m.title] = 0;
     });
 
-    const STORAGE_KEY = 'cinetix-demo-v1';
+    function persistDemoState() { /* Business data is server-owned and is never stored in browser storage. */ }
 
-    function persistDemoState() {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                moviesCatalog, cinemasList, roomsList, staffList, currentUser,
-                registeredUsers, state, stats
-            }));
-        } catch (error) {
-            console.warn('Không thể lưu dữ liệu demo trên trình duyệt.', error);
-        }
-    }
-
-    function restoreDemoState() {
-        try {
-            const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-            if (!saved || typeof saved !== 'object') return;
-            if (Array.isArray(saved.moviesCatalog) && saved.moviesCatalog.length) moviesCatalog = saved.moviesCatalog;
-            if (Array.isArray(saved.cinemasList)) cinemasList = saved.cinemasList;
-            if (Array.isArray(saved.roomsList)) roomsList = saved.roomsList;
-            if (Array.isArray(saved.staffList)) staffList = saved.staffList;
-            if (Array.isArray(saved.registeredUsers)) registeredUsers = saved.registeredUsers;
-            if (saved.state && typeof saved.state === 'object') {
-                Object.assign(state, saved.state);
-                state.foodQtys = { ...state.foodQtys, ...(saved.state.foodQtys || {}) };
-                state.foodOptions = { ...state.foodOptions, ...(saved.state.foodOptions || {}) };
-            }
-            if (saved.stats && typeof saved.stats === 'object') {
-                Object.assign(stats, saved.stats);
-                stats.movieTickets = { ...stats.movieTickets, ...(saved.stats.movieTickets || {}) };
-                stats.movieRevenue = { ...stats.movieRevenue, ...(saved.stats.movieRevenue || {}) };
-                stats.soldSeatsByShowtime = saved.stats.soldSeatsByShowtime || {};
-                stats.bookings = Array.isArray(saved.stats.bookings) ? saved.stats.bookings : [];
-            }
-            currentUser = saved.currentUser
-                ? (registeredUsers.find(user => user.id === saved.currentUser.id) || saved.currentUser)
-                : null;
-            stats.newMembers = registeredUsers.length;
-        } catch (error) {
-            console.warn('Dữ liệu demo đã lưu không đọc được; sẽ dùng dữ liệu mẫu.', error);
-        }
-    }
+    function restoreDemoState() { /* Keep any legacy browser data untouched; do not import it automatically. */ }
 
     function createPasswordSalt() {
         const bytes = new Uint8Array(16);
@@ -724,9 +685,9 @@
         document.getElementById('finalCustName').innerText = newOrder.customer;
         document.getElementById('finalTicketCount').innerText = `${newOrder.seatCount} vé`;
         document.getElementById('finalComboText').innerText = newOrder.comboText;
-        document.getElementById('finalPayMethodText').innerText = `Phương thức: ${newOrder.payMethod}`;
+        document.getElementById('finalPayMethodText').innerText = `Mô phỏng: ${newOrder.payMethod}`;
         document.getElementById('finalTotalMoney').innerText = formatVND(newOrder.total);
-        document.getElementById('finalTicketQrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${orderCode}`;
+        document.getElementById('finalTicketQrImg').src = '/public/cinetix-logo.svg';
 
         // Reset lựa chọn tạm thời
         state.selectedSeats = [];

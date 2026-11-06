@@ -1,0 +1,4 @@
+packages:
+  - .
+allowBuilds:
+  mysql2: false
