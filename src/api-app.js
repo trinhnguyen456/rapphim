@@ -560,6 +560,37 @@
     goScreen('home');
   }
 
+  async function handleChangePassword() {
+    if (!currentUser) return goScreen('auth');
+    const currentPassword = $('changeCurrentPassword')?.value || '';
+    const newPassword = $('changeNewPassword')?.value || '';
+    const confirmPassword = $('changeConfirmPassword')?.value || '';
+    if (!currentPassword || !newPassword || !confirmPassword) return alert('Vui lòng điền đủ mật khẩu hiện tại, mật khẩu mới và phần xác nhận.');
+    if (newPassword.length < 6 || newPassword.length > 256) return alert('Mật khẩu mới cần có từ 6 đến 256 ký tự.');
+    if (newPassword !== confirmPassword) return alert('Mật khẩu xác nhận không khớp.');
+
+    const email = currentUser.email;
+    const button = $('changePasswordButton');
+    if (button?.disabled) return;
+    if (button) { button.disabled = true; button.textContent = 'Đang đổi mật khẩu…'; }
+    try {
+      await api.request('/api/auth/password', {
+        method: 'POST',
+        body: { currentPassword, newPassword, confirmPassword },
+      });
+      ['changeCurrentPassword', 'changeNewPassword', 'changeConfirmPassword'].forEach((id) => { if ($(id)) $(id).value = ''; });
+      if ($('loginEmail')) $('loginEmail').value = email;
+      currentUser = null;
+      syncAuthUI();
+      goScreen('auth');
+      alert('Đổi mật khẩu thành công. Bạn đã được đăng xuất khỏi các phiên; hãy đăng nhập lại bằng mật khẩu mới.');
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      if (button) { button.disabled = false; button.textContent = 'Đổi mật khẩu'; }
+    }
+  }
+
   async function saveUserProfile() {
     if (!currentUser) return goScreen('auth');
     const name = $('profNameInput').value.trim();
@@ -1041,6 +1072,7 @@
   window.handleRegister = handleRegister;
   window.handleLogin = handleLogin;
   window.handleLogout = handleLogout;
+  window.handleChangePassword = handleChangePassword;
   window.saveUserProfile = saveUserProfile;
   window.proceedFromSeats = () => state.selectedSeats.length ? goScreen('popcorn') : alert('Vui lòng chọn ghế trước.');
   window.openQrPaymentModal = openQrPaymentModal;

@@ -683,6 +683,24 @@
             </div>
 
             <button class="btn-pink" style="width: 100%; margin-bottom: 14px;" onclick="saveUserProfile()">Lưu thay đổi</button>
+            <section aria-labelledby="changePasswordHeading" style="border-top: 1px solid rgba(255,255,255,.12); margin: 8px 0 18px; padding-top: 18px;">
+                <h3 id="changePasswordHeading" style="font-size: 1.05rem; margin-bottom: 6px;">Đổi mật khẩu</h3>
+                <p id="changePasswordNote" style="font-size: .8rem; color: var(--text-muted); margin-bottom: 14px;">Mật khẩu mới cần từ 6 đến 256 ký tự và phải khác mật khẩu hiện tại.</p>
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <label for="changeCurrentPassword">Mật khẩu hiện tại</label>
+                    <input type="password" id="changeCurrentPassword" class="input-dark" autocomplete="current-password" maxlength="256" required>
+                </div>
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <label for="changeNewPassword">Mật khẩu mới</label>
+                    <input type="password" id="changeNewPassword" class="input-dark" autocomplete="new-password" minlength="6" maxlength="256" aria-describedby="changePasswordNote" required>
+                </div>
+                <div class="input-group" style="margin-bottom: 14px;">
+                    <label for="changeConfirmPassword">Nhập lại mật khẩu mới</label>
+                    <input type="password" id="changeConfirmPassword" class="input-dark" autocomplete="new-password" minlength="6" maxlength="256" required>
+                </div>
+                <button id="changePasswordButton" class="btn-dark" style="width: 100%; margin-bottom: 10px;" type="button" onclick="handleChangePassword()">Đổi mật khẩu</button>
+                <p style="font-size: .78rem; color: var(--text-muted); margin: 0;">Sau khi đổi, bạn sẽ được đăng xuất khỏi mọi phiên và cần đăng nhập lại bằng mật khẩu mới.</p>
+            </section>
             <div style="text-align: center;">
                 <span style="font-size: 0.84rem; color: var(--text-gray); cursor: pointer;" onclick="handleLogout()">↪ Đăng xuất</span>
             </div>
@@ -827,6 +845,7 @@
         </div>
 
         <div style="padding-left: 10px; display: flex; flex-direction: column; gap: 10px;">
+            <button class="btn-dark" type="button" onclick="goScreen('profile')" style="text-align: left;">⚙ Tài khoản &amp; bảo mật</button>
             <span style="font-size: 0.82rem; color: var(--text-gray); cursor: pointer;" onclick="goScreen('home')">← Về website Cinetix</span>
         </div>
     </aside>

@@ -57,6 +57,11 @@
   - Tài khoản admin đầu tiên dùng email/mật khẩu nhận qua thẻ nhập bí mật, tạo/seed an toàn và lặp lại không tạo admin trùng; không có mật khẩu mẫu tĩnh. Thông tin bí mật không in ra log.
   - Cookie, CSRF/origin và body-size/content-type được kiểm tra; không bật CORS wildcard. Profile chỉ đọc/sửa dữ liệu của chính tài khoản. Throttle dùng ba counter MySQL chia sẻ giữa mọi instance: đăng nhập tối đa 300 lần, đăng ký 100 lần và tạo booking 100 lần trong mỗi cửa sổ 15 phút; chỉ ba bucket cố định, không lưu địa chỉ IP và không dùng Map in-memory theo từng IP.
 
+- [x] **Đổi mật khẩu tài khoản đang đăng nhập**
+  - Trong Hồ sơ, người dùng có thể nhập mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu mới; máy chủ xác minh mật khẩu hiện tại, yêu cầu hai mật khẩu mới khớp và áp dụng quy tắc hiện có từ 6 đến 256 ký tự.
+  - Chỉ tài khoản đang xác thực có thể đổi mật khẩu của chính mình; mật khẩu mới được băm bằng `crypto.scrypt` với salt riêng, không lưu hay ghi log mật khẩu thuần.
+  - Khi đổi thành công, máy chủ thu hồi mọi phiên của tài khoản và xóa cookie phiên hiện tại; giao diện thông báo người dùng cần đăng nhập lại bằng mật khẩu mới. CSRF protection vẫn được áp dụng.
+
 - [x] **Giao diện quản trị nối API và dữ liệu dùng chung**
   - Sáu tab tổng quan, phim/suất chiếu, rạp/phòng, khách, nhân sự và vé/doanh thu tải qua API; CRUD chỉ thành công với admin, kiểm tra dữ liệu/ID phía server và ghi bền vững trong DB.
   - Thêm/sửa/xóa phim cập nhật catalog công khai; cập nhật rạp/phòng/suất chiếu ảnh hưởng các lựa chọn booking nhưng không xóa đơn/ghế lịch sử. Chỉ role admin được thay đổi; khách chỉ đọc nội dung công khai.

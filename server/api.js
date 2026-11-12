@@ -83,7 +83,7 @@ function validEmail(value) {
 
 function validPassword(value) {
   if (typeof value !== 'string' || value.length < 6 || value.length > 256) {
-    throw new HttpError(400, 'Mật khẩu cần có ít nhất 6 ký tự.', 'invalid_password');
+    throw new HttpError(400, 'Mật khẩu cần có từ 6 đến 256 ký tự.', 'invalid_password');
   }
   return value;
 }
@@ -364,6 +364,49 @@ async function routeApi(pool, request, response, url) {
     return sendJson(response, 200, { user: userView(row) });
   }
   if (method === 'POST' && pathname === '/api/auth/logout') {
+    await destroySession(pool, request, response);
+    return sendJson(response, 200, { ok: true });
+  }
+  if (method === 'POST' && pathname === '/api/auth/password') {
+    const user = await requireUser(pool, request);
+    const body = await readJson(request);
+    const currentPassword = body.currentPassword;
+    if (typeof currentPassword !== 'string' || currentPassword.length > 256) {
+      throw new HttpError(400, 'Vui lòng nhập mật khẩu hiện tại.', 'invalid_current_password');
+    }
+    const newPassword = validPassword(body.newPassword);
+    if (body.confirmPassword !== newPassword) {
+      throw new HttpError(400, 'Mật khẩu xác nhận không khớp.', 'password_mismatch');
+    }
+
+    const connection = await pool.getConnection();
+    let transactionStarted = false;
+    try {
+      await connection.beginTransaction();
+      transactionStarted = true;
+      const [rows] = await connection.execute(
+        "SELECT password_hash FROM users WHERE id=? AND status='active' LIMIT 1 FOR UPDATE",
+        [user.id],
+      );
+      if (!rows[0] || !(await verifyPassword(currentPassword, rows[0].password_hash))) {
+        throw new HttpError(400, 'Mật khẩu hiện tại không chính xác.', 'current_password_invalid');
+      }
+      if (await verifyPassword(newPassword, rows[0].password_hash)) {
+        throw new HttpError(400, 'Mật khẩu mới phải khác mật khẩu hiện tại.', 'password_unchanged');
+      }
+      const passwordHash = await hashPassword(newPassword);
+      await connection.execute('UPDATE users SET password_hash=? WHERE id=?', [passwordHash, user.id]);
+      await connection.execute('DELETE FROM sessions WHERE user_id=?', [user.id]);
+      await connection.commit();
+      transactionStarted = false;
+    } catch (error) {
+      if (transactionStarted) {
+        try { await connection.rollback(); } catch { /* Preserve the original operation error. */ }
+      }
+      throw error;
+    } finally {
+      connection.release();
+    }
     await destroySession(pool, request, response);
     return sendJson(response, 200, { ok: true });
   }
