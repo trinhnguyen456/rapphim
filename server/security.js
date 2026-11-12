@@ -48,7 +48,8 @@ function ensureCsrfCookie(request, response) {
 
 function verifyCsrf(request) {
   if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) return true;
-  if (request.headers['sec-fetch-site'] === 'cross-site') return false;
+  // Cloud Preview is embedded in a cross-site iframe, so Sec-Fetch-Site alone
+  // must not reject a same-app request carrying the double-submit CSRF token.
   const cookies = readCookies(request);
   const cookieToken = cookies[CSRF_COOKIE];
   const headerToken = request.headers['x-cinetix-csrf'];
@@ -56,7 +57,7 @@ function verifyCsrf(request) {
   const origin = request.headers.origin;
   const referer = request.headers.referer;
   if (origin && referer) {
-    try { if (new URL(referer).origin !== origin) return false; } catch { return false; }
+    try { if (new URL(referer).origin !== new URL(origin).origin) return false; } catch { return false; }
   }
   return true;
 }
