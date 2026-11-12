@@ -698,7 +698,8 @@
                     <label for="changeConfirmPassword">Nhập lại mật khẩu mới</label>
                     <input type="password" id="changeConfirmPassword" class="input-dark" autocomplete="new-password" minlength="6" maxlength="256" required>
                 </div>
-                <button id="changePasswordButton" class="btn-dark" style="width: 100%; margin-bottom: 10px;" type="button" onclick="handleChangePassword()">Đổi mật khẩu</button>
+                <p id="changePasswordStatus" role="alert" aria-live="assertive" hidden style="font-size: .82rem; color: var(--pink-light); margin: 0 0 10px;"></p>
+                <button id="changePasswordButton" class="btn-dark" style="width: 100%; margin-bottom: 10px;" type="button">Đổi mật khẩu</button>
                 <p style="font-size: .78rem; color: var(--text-muted); margin: 0;">Sau khi đổi, bạn sẽ được đăng xuất khỏi mọi phiên và cần đăng nhập lại bằng mật khẩu mới.</p>
             </section>
             <div style="text-align: center;">

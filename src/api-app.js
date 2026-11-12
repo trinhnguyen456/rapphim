@@ -560,14 +560,22 @@
     goScreen('home');
   }
 
+  function showChangePasswordStatus(message) {
+    const status = $('changePasswordStatus');
+    if (!status) { if (message) alert(message); return; }
+    status.textContent = message;
+    status.hidden = !message;
+  }
+
   async function handleChangePassword() {
     if (!currentUser) return goScreen('auth');
     const currentPassword = $('changeCurrentPassword')?.value || '';
     const newPassword = $('changeNewPassword')?.value || '';
     const confirmPassword = $('changeConfirmPassword')?.value || '';
-    if (!currentPassword || !newPassword || !confirmPassword) return alert('Vui lòng điền đủ mật khẩu hiện tại, mật khẩu mới và phần xác nhận.');
-    if (newPassword.length < 6 || newPassword.length > 256) return alert('Mật khẩu mới cần có từ 6 đến 256 ký tự.');
-    if (newPassword !== confirmPassword) return alert('Mật khẩu xác nhận không khớp.');
+    showChangePasswordStatus('');
+    if (!currentPassword || !newPassword || !confirmPassword) return showChangePasswordStatus('Vui lòng điền đủ mật khẩu hiện tại, mật khẩu mới và phần xác nhận.');
+    if (newPassword.length < 6 || newPassword.length > 256) return showChangePasswordStatus('Mật khẩu mới cần có từ 6 đến 256 ký tự.');
+    if (newPassword !== confirmPassword) return showChangePasswordStatus('Mật khẩu xác nhận không khớp.');
 
     const email = currentUser.email;
     const button = $('changePasswordButton');
@@ -585,11 +593,13 @@
       goScreen('auth');
       alert('Đổi mật khẩu thành công. Bạn đã được đăng xuất khỏi các phiên; hãy đăng nhập lại bằng mật khẩu mới.');
     } catch (error) {
-      alert(error.message);
+      showChangePasswordStatus(error?.message || 'Không thể đổi mật khẩu. Vui lòng thử lại.');
     } finally {
       if (button) { button.disabled = false; button.textContent = 'Đổi mật khẩu'; }
     }
   }
+
+  $('changePasswordButton')?.addEventListener('click', handleChangePassword);
 
   async function saveUserProfile() {
     if (!currentUser) return goScreen('auth');
