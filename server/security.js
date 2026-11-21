@@ -10,10 +10,9 @@ const scryptAsync = promisify(crypto.scrypt);
 
 function cookieAttributes(maxAge, httpOnly) {
   const localHttp = process.env.CINETIX_COOKIE_MODE === 'local-http';
-  const parts = [`Path=/`, `Max-Age=${maxAge}`, 'SameSite=None'];
+  const parts = ['Path=/', `Max-Age=${maxAge}`, localHttp ? 'SameSite=Lax' : 'SameSite=None'];
   if (httpOnly) parts.push('HttpOnly');
   if (!localHttp) parts.push('Secure');
-  else parts[parts.length - 1] = 'SameSite=Lax';
   return parts.join('; ');
 }
 
