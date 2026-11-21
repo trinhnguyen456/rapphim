@@ -406,7 +406,7 @@
     const card = button.closest('.food-item-card');
     card?.querySelectorAll('.opt-btn').forEach((element) => {
       element.classList.toggle('selected', element === button);
-      element.textContent = element.dataset.choice === choice ? `✓ ${choice}` : choice;
+      element.textContent = element.dataset.choice === choice ? `✓ ${choice}` : element.dataset.choice;
     });
     syncSummaryUI();
   }
