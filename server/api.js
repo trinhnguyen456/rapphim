@@ -503,16 +503,23 @@ async function routeApi(pool, request, response, url) {
     return sendJson(response, 200, { ok: true });
   }
 
-  if (pathname === '/api/admin/users' && method === 'POST') {
+ if (pathname === '/api/admin/users' && method === 'POST') {
     const body = await readJson(request);
     const name = cleanString(body.name, 'Họ tên', 120);
     const email = validEmail(body.email);
     const phone = cleanString(body.phone || '', 'Số điện thoại', 32, false);
     const password = validPassword(body.password);
     try {
-      const [result] = await pool.execute("INSERT INTO users (public_id,name,email,phone,password_hash,role,status) VALUES (?,?,?,?,?,'customer','active')", [`U-${crypto.randomUUID().replaceAll('-', '').slice(0, 30)}`,name,email,phone,hashPassword(password)]);
+      const passwordHash = await hashPassword(password);
+      const [result] = await pool.execute(
+        "INSERT INTO users (public_id,name,email,phone,password_hash,role,status) VALUES (?,?,?,?,?,'customer','active')",
+        [`U-${crypto.randomUUID().replaceAll('-', '').slice(0, 30)}`, name, email, phone, passwordHash],
+      );
       return sendJson(response, 201, { id: result.insertId });
-    } catch (error) { if (error.code === 'ER_DUP_ENTRY') throw new HttpError(409, 'Email này đã được đăng ký.'); throw error; }
+    } catch (error) {
+      if (error.code === 'ER_DUP_ENTRY') throw new HttpError(409, 'Email này đã được đăng ký.');
+      throw error;
+    }
   }
   const userMatch = pathname.match(/^\/api\/admin\/users\/([A-Za-z0-9_-]+)$/);
   if (userMatch && method === 'DELETE') {
