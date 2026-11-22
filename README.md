@@ -1,27 +1,74 @@
-# Cinetix — Đặt vé & Quản trị rạp phim
+# Cinetix — Hệ thống Đặt vé & Quản trị Rạp phim
 
-Website tiếng Việt dựa trên tệp HTML tham chiếu. Giao diện giữ HTML/CSS/JavaScript thuần; backend Node.js cung cấp API JSON, đăng nhập phiên server-side, phân quyền quản trị và MySQL Managed.
+Ứng dụng web đặt vé xem phim và quản trị cụm rạp bằng tiếng Việt. Giao diện xây dựng bằng HTML/CSS/JavaScript thuần; backend chạy trên Node.js (`>=22.0.0`) sử dụng thư viện `mysql2` cung cấp API JSON, xác thực phiên phía máy chủ (server-side session) và lưu trữ dữ liệu trên MySQL/MariaDB.
 
-## Chạy 
+## Yêu cầu hệ thống
 
-Cấu hình dự án cần có `DATABASE_URL` (Managed MySQL) và hai secret ban đầu `CINETIX_ADMIN_EMAIL` / `CINETIX_ADMIN_PASSWORD`. Không ghi các giá trị này vào tệp, Git hoặc log. Tài khoản admin đầu tiên yêu cầu mật khẩu ít nhất 12 ký tự; nó chỉ được tạo khi migration không tìm thấy admin nào.
+- **Node.js 22** (hỗ trợ sẵn cờ `--env-file` để đọc tệp `.env`)
+- **MySQL / MariaDB** (dùng XAMPP khi chạy cục bộ, hoặc dịch vụ MySQL đám mây như TiDB Cloud / Aiven khi triển khai lên Render)
 
-```bash
-corepack pnpm install --frozen-lockfile
-corepack pnpm migrate
-corepack pnpm dev
+## Biến môi trường
+
+Không đưa tệp `.env`, mật khẩu hoặc chuỗi kết nối lên Git hay log.
+
+| Biến | Bắt buộc | Mô tả |
+| :--- | :--- | :--- |
+| `DATABASE_URL` | Có | Chuỗi kết nối dạng `mysql://USER:PASS@HOST:PORT/cinetix` |
+| `CINETIX_ADMIN_EMAIL` | Khi khởi tạo DB mới | Email tài khoản quản trị đầu tiên (chỉ tạo khi chưa có admin nào) |
+| `CINETIX_ADMIN_PASSWORD` | Khi khởi tạo DB mới | Mật khẩu admin đầu tiên (từ 12 đến 256 ký tự) |
+| `CINETIX_COOKIE_MODE` | Chỉ khi chạy HTTP cục bộ | Đặt `local-http` khi chạy `localhost`; để trống trên HTTPS (Render) |
+| `PORT` | Không | Cổng máy chủ HTTP (mặc định `3000`) |
+
+## Chạy cục bộ với XAMPP
+
+1. Mở **XAMPP Control Panel** và bật **MySQL** (tạo sẵn cơ sở dữ liệu tên `cinetix` trong phpMyAdmin).
+2. Tạo tệp `.env` ở thư mục gốc dự án:
+
+```env
+DATABASE_URL=mysql://root@127.0.0.1:3306/cinetix
+CINETIX_COOKIE_MODE=local-http
+CINETIX_ADMIN_EMAIL=admin@cinetix.local
+CINETIX_ADMIN_PASSWORD=MatKhauAdminTu12KyTu!
+PORT=3000
 ```
 
-`pnpm dev` chạy migration không phá hủy rồi mở server. `pnpm start` chỉ mở server trên `PORT` (mặc định `3000`) sau khi schema đã được chuẩn bị. Health endpoint là `/_app/health`. Container production dùng Node 22, dependency từ lockfile và chạy bằng user không đặc quyền; migrations được chạy trước lúc phát hành, không chặn health listener khi container khởi động.
+3. Cài thư viện, khởi tạo bảng/dữ liệu mẫu và chạy máy chủ:
 
-## Dữ liệu và tài khoản
+```bash
+npm install
+node --env-file=.env scripts/migrate.js
+node --env-file=.env server.js
+```
 
-Thông tin tài khoản, phim, rạp, phòng, suất chiếu, bắp nước, booking, ghế và thống kê được đọc/ghi vào MySQL Managed qua API; không dùng `localStorage` làm nguồn nghiệp vụ. Dữ liệu cũ ở từng trình duyệt không tự được nhập vào DB. Preview và phiên bản công khai dùng chung DB nên thao tác ghi từ cả hai môi trường là dữ liệu thật của cùng website; không chạy reset hoặc xóa dữ liệu để thử nghiệm. Migration có số phiên bản/checksum; dữ liệu mẫu chỉ seed vào bảng đang trống.
+4. Truy cập `http://localhost:3000` (endpoint kiểm tra trạng thái: `/_app/health`).
 
-Đăng ký khách dùng mật khẩu tối thiểu 6 ký tự; băm và xác minh bằng `crypto.scrypt` bất đồng bộ. Session lưu token hash trong DB; cookie phiên là `HttpOnly`, `Secure`, `SameSite=None` trên HTTPS. Các API quản trị tự kiểm tra role admin ở máy chủ. Admin đầu tiên dùng thông tin trong protected secrets của dự án.
+## Triển khai trên Render
 
-Rate limits được lưu trong ba bucket cố định của MySQL, dùng chung giữa các instance và không lưu địa chỉ IP: tối đa 300 yêu cầu đăng nhập, 100 đăng ký và 100 tạo booking trong mỗi cửa sổ 15 phút. Preview và production dùng chung các bộ đếm này.
+Render không cung cấp sẵn MySQL nên cần tạo cơ sở dữ liệu MySQL trên dịch vụ ngoài (ví dụ TiDB Cloud Serverless) trước, sau đó tạo **Web Service (Node)** trên Render với cấu hình:
 
-## Giới hạn bản demo
+- **Build Command:** `npm install`
+- **Start Command:** `npm run dev` *(chạy migration không phá hủy rồi khởi động `server.js`)*
+- **Health Check Path:** `/_app/health`
+- **Environment Variables:** khai báo `DATABASE_URL`, `CINETIX_ADMIN_EMAIL`, `CINETIX_ADMIN_PASSWORD` *(không khai báo `CINETIX_COOKIE_MODE=local-http` vì Render chạy HTTPS)*.
 
-Phim, suất chiếu, giá và catalog khởi tạo là dữ liệu minh họa cần được quản trị viên rà lại trước khi vận hành thương mại. Đơn booking ghi trạng thái xác nhận demo để trình diễn vé và thống kê. QR, MoMo, ATM và thẻ chỉ mô phỏng: website không thu số thẻ, không gửi tiền và không phát hành vé thanh toán thật. Banner trên website thông báo rằng hồ sơ/liên hệ/đơn được lưu trong database dùng chung.
+Nếu chạy bằng Docker (`Dockerfile`), container dùng Node 22, cài dependency từ `pnpm-lock.yaml`, lắng nghe trên `PORT` (mặc định `3000`) và yêu cầu chạy `scripts/migrate.js` trước khi khởi động.
+
+## Các lệnh hỗ trợ
+
+```bash
+npm run check     # Kiểm tra cú pháp toàn bộ tệp JS frontend & backend
+npm run migrate   # Chạy migration và nạp dữ liệu mẫu vào các bảng trống
+npm run dev       # Chạy migration rồi khởi động server
+npm start         # Chỉ khởi động server (khi schema đã sẵn sàng)
+```
+
+## Kiến trúc dữ liệu & bảo mật
+
+- **Lưu trữ tập trung trên MySQL:** Phim, rạp, phòng chiếu, suất chiếu, bắp nước, tài khoản, nhân sự, đơn vé và ghế đều được đọc/ghi qua API; không dùng `localStorage` làm nguồn dữ liệu nghiệp vụ.
+- **Migration an toàn:** Các tệp SQL trong `db/migrations/` được đánh số và kiểm tra checksum SHA-256 trong bảng `schema_migrations`. Dữ liệu mẫu (`db/seed.js`) chỉ nạp khi bảng tương ứng còn trống.
+- **Xác thực & phân quyền:** Mật khẩu băm bằng `crypto.scrypt` bất đồng bộ (tối thiểu 6 ký tự với khách hàng, 12 ký tự với admin khởi tạo). Phiên đăng nhập lưu dạng token hash trong bảng `sessions`, cấp cookie `HttpOnly` kèm kiểm tra CSRF (`X-Cinetix-CSRF`). Đổi mật khẩu qua `/api/auth/password` sẽ tự thu hồi toàn bộ phiên cũ. Mọi tuyến `/api/admin/*` đều kiểm tra quyền `admin` tại máy chủ.
+- **Giới hạn tần suất (Rate limit):** Lưu tập trung trong bảng `request_rate_limits` theo 3 nhóm cố định mỗi cửa sổ 15 phút: `login` (300), `register` (100), `booking` (100).
+
+## Phạm vi bản demo
+
+Phim, lịch chiếu, giá vé và danh mục bắp nước khởi tạo là dữ liệu minh họa. Đơn đặt vé lưu trạng thái xác nhận demo (`demo_confirmed`); các phương thức QR, MoMo, ATM và thẻ quốc tế chỉ mô phỏng quy trình, không thu thông tin thẻ và không phát sinh giao dịch thanh toán thật.
