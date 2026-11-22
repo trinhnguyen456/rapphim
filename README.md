@@ -2,7 +2,7 @@
 
 Website tiếng Việt dựa trên tệp HTML tham chiếu. Giao diện giữ HTML/CSS/JavaScript thuần; backend Node.js cung cấp API JSON, đăng nhập phiên server-side, phân quyền quản trị và MySQL Managed.
 
-## Chạy trong Manus
+## Chạy 
 
 Cấu hình dự án cần có `DATABASE_URL` (Managed MySQL) và hai secret ban đầu `CINETIX_ADMIN_EMAIL` / `CINETIX_ADMIN_PASSWORD`. Không ghi các giá trị này vào tệp, Git hoặc log. Tài khoản admin đầu tiên yêu cầu mật khẩu ít nhất 12 ký tự; nó chỉ được tạo khi migration không tìm thấy admin nào.
 
